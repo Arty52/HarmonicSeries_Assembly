@@ -1,0 +1,5 @@
+#compiler --> to make: chmod 777 <filename>, then call ./<filename>
+nasm -f elf64 -l harmonicseries_4way.lis -o harmonicseries_4way.o harmonicseries_4way.asm
+g++ -c -m64 -Wall -l driver4way.lis -o driver4way.o driver4way.cpp
+g++ -m64 -o harmonicseries4way.out driver4way.o harmonicseries_4way.o debug.o
+./harmonicseries4way.out

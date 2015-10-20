@@ -1,0 +1,5 @@
+#compiler --> to make: chmod 777 <filename>, then call ./<filename>
+nasm -f elf64 -l harmonicseries.lis -o harmonicseries.o harmonicseries.asm
+g++ -c -m64 -Wall -l driver.lis -o driver.o driver.cpp
+g++ -m64 -o harmonicseries.out driver.o harmonicseries.o debug.o
+harmonicseries.out

@@ -1,0 +1,525 @@
+     1                                  ;Author information
+     2                                  ;  Author name: Art Grichine
+     3                                  ;  Author email: ArtGrichine@gmail.com
+     4                                  ;Course information
+     5                                  ;  Course number: CPSC240
+     6                                  ;  Assignment number: 3
+     7                                  ;  Due date: 2014-Feb-25
+     8                                  ;Project information
+     9                                  ;  Project title: The Powers Of e (Assignment 3)
+    10                                  ;  Purpose: Preform Taylor Series (e^x) calculations on 4 user inputs to a user defined amount of iterations, output initial user
+    11                                  ;	    'x' values, result of Taylor Series for each given e^x solution, and elapsed time of the calculations from the system 
+    12                                  ;	    clock in tics, nanoseconds, and seconds.
+    13                                  ;  Status: No known errors
+    14                                  ;  Project files: ThePowersOfe.cpp, ThePowersOfe.asm, debug.inc, debug.asm
+    15                                  ;Module information
+    16                                  ;  This module's call name: ThePowersOfe
+    17                                  ;  Language: X86-64
+    18                                  ;  Syntax: Intel
+    19                                  ;  Date last modified: 2014-Feb-20
+    20                                  ;  Purpose: Intake four values from user, intake a Taylor Series iteration, preform e^x calculation to the user defined amount of 
+    21                                  ;	    iterations. Output initial user 'x' values, result from e^x and the elapsed time of calculations in tics, ns & seconds
+    22                                  ;  File name: ThePowersOfe.asm
+    23                                  ;  Status: In production.  No known errors.
+    24                                  ;  Future enhancements: None planned
+    25                                  ;Translator information
+    26                                  ;  Assemble: nasm -f elf64 -l harmonicseries_4way.lis -o harmonicseries_4way.o harmonicseries_4way.asm
+    27                                  ;References and credits
+    28                                  ;  CSUF/Professor Floyd Holliday: http://holliday.ecs.fullerton.edu
+    29                                  ;Print information
+    30                                  ;  Page width: 132 columns
+    31                                  ;  Begin comments: 65
+    32                                  ;  Optimal print specification: Landscape, 9 points or smaller, monospace, 8Â1⁄2x11 paper
+    33                                  ;
+    34                                  ;===== Begin code area ============================================================================================================
+    35                                  
+    36                                  %include "debug.inc" 					    ;This file contains the subprogram to be tested with this test program.
+    37                              <1> ;System Title:  Debugger for X86 assembly programs
+    38                              <1> ;Author: Floyd Holliday
+    39                              <1> ;Email: activeprofessor@yahoo.com
+    40                              <1> ;Status: Released for general use; bugs will be fixed when reported
+    41                              <1> ;This module file name: debug.inc
+    42                              <1> ;This module purpose: This file is an "include" file.  It allows data to pass directly from the calling statement to the subprogram.
+    43                              <1> ;Language: X86
+    44                              <1> ;Syntax: Intel
+    45                              <1> ;Date of last update: 2013-Dec-13
+    46                              <1> ;Source file structure: width is 140 characters; detailed comments begin in column 61.
+    47                              <1> ;Printing: best results are obtained using landscape orientation with 9 point (or less) monospaced font.
+    48                              <1> ;
+    49                              <1> ;Targeted user group: Assembly programmers enrolled in programming courses like CPSC240.
+    50                              <1> ;
+    51                              <1> ;Requirements: debug.asm must be assembled into debug.o  This file is not to be assembled; it is used as is.  Place this file in the 
+    52                              <1> ;directory along with debug.o and with other assembled object files.
+    53                              <1> ;
+    54                              <1> 
+    55                              <1> ;===== showregisters ======================================================================================================================
+    56                              <1> 
+    57                              <1> extern showregisterssubprogram
+    58                              <1> 
+    59                              <1> %macro showregisters 1
+    60                              <1>     push qword %1
+    61                              <1>     call showregisterssubprogram
+    62                              <1>     ;Question: Where is the pop corresponding to the push above?  Answer: In the ret statement.
+    63                              <1> %endmacro
+    64                              <1> 
+    65                              <1> ;===== showstack ==========================================================================================================================
+    66                              <1> 
+    67                              <1> extern showstacksubprogram
+    68                              <1> 
+    69                              <1> %macro dumpstack 3
+    70                              <1>     push rsp                                      ;Save the current value of rsp since rsp is very volatile
+    71                              <1>     push rbp                                      ;Save the current value of rbp for insurance
+    72                              <1>     push qword %3                                 ;number of qwords inside the stack
+    73                              <1>     push qword %2                                 ;number of qwords outside the stack
+    74                              <1>     push qword %1                                 ;an arbitrary integer created by the caller
+    75                              <1>     call showstacksubprogram
+    76                              <1>     ;Question: Where are the pops corresponding to three pushes above?  Answer: In the ret statement.
+    77                              <1> %endmacro
+    78                              <1> 
+    79                              <1> ;===== showfpu ============================================================================================================================
+    80                              <1> 
+    81                              <1> extern showfpusubprogram
+    82                              <1> 
+    83                              <1> %macro showfpuregisters 1
+    84                              <1>     push qword %1                                 ;Integer identifying this showing of the fpu registers.
+    85                              <1>     call showfpusubprogram
+    86                              <1>     ;Where are the pops corresponding to those pushes?
+    87                              <1> %endmacro
+    88                              <1> 
+    89                              <1> ;===== showxmm ============================================================================================================================
+    90                              <1> 
+    91                              <1> extern showxmmsubprogram
+    92                              <1> 
+    93                              <1> %macro showxmmregisters 1
+    94                              <1>      push qword %1
+    95                              <1>      call showxmmsubprogram
+    96                              <1> %endmacro
+    97                              <1> 
+    98                              <1> ;===== showymm ============================================================================================================================
+    99                              <1> 
+   100                              <1> extern showymmsubprogram
+   101                              <1> 
+   102                              <1> %macro showymmregisters 1
+   103                              <1>     push qword %1
+   104                              <1>     call showymmsubprogram
+   105                              <1> %endmacro
+   106                              <1> 
+   107                              <1> ;==========================================================================================================================================
+   108                              <1> 
+   109                              <1> ;How to use the debugger.
+   110                              <1> 
+   111                              <1> ;1.  Assemble the file debug.asm and thereby create an object file known as debug.o
+   112                              <1> 
+   113                              <1> ;2.  Place into one single directory this file, debug.inc, and debug.o, and as many addition source file as desired.
+   114                              <1> 
+   115                              <1> ;3.  Insert the statement < %include "debug.inc" > without angle brackets into an asm source file to be debugged.  Place the statement 
+   116                              <1> ;    before segment .data .
+   117                              <1> 
+   118                              <1> ;4.  In segment .text place debugging statements at places where you want to examen the contents of registers.  There are four kinds 
+   119                              <1> ;    of debug statements, namely: show the integer registers, show the system stack, show the fpu registers, and show the SSE2 
+   120                              <1> ;    registers.  Examples of each of the four kinds of debug statements are found below.
+   121                              <1> 
+   122                              <1> ;Example of debug statememts.
+   123                              <1> 
+   124                              <1> ;==============================================
+   125                              <1> ;  showregisters 33
+   126                              <1> ;==============================================
+   127                              <1> ;The statement above will show the contents of all 16 integer registers and the contents of the flags register.  The trailing number 33 
+   128                              <1> ;is arbitrary.  The number 33 in the example can be replaced with any integer, but it cannot be omitted.
+   129                              <1> 
+   130                              <1> ;==============================================
+   131                              <1> ;  dumpstack 88, 2, 5
+   132                              <1> ;==============================================
+   133                              <1> ;The statement above will show the contents the system stack beginning with 2 quadwords outside of the top of the stack and ending with
+   134                              <1> ;quadword #5 inside the stack for a total of 8 quadwords.  The first parameter 88 is an arbitrary integer selected by the programmer.
+   135                              <1> ;The second parameter 2 indicates the number of quadwords beyond the top to be displayed.  To display nothing outside of the stack set
+   136                              <1> ;the middle parameter to 0.  The last parameter 5 is the number of qwords after the top to be display.  The count is from 0 to 5, and
+   137                              <1> ;therefore, a 5 parameter will cause 6 qwords inside the stack to be outputted.
+   138                              <1> 
+   139                              <1> ;==============================================
+   140                              <1> ;  showfpuregisters 133
+   141                              <1> ;==============================================
+   142                              <1> ;The statement above will show the contents of all 8 fpu registers.  The parameter 133 is arbitrary and may be replaced by any integer,
+   143                              <1> ;but it cannot be omitted.
+   144                              <1> 
+   145                              <1> ;==============================================
+   146                              <1> ;  showxmmregisters 888
+   147                              <1> ;==============================================
+   148                              <1> ;The statement above will show the contents of all 16 SSE2 registers.  The parameter 888 is arbitrary and may be replaced by any integer,
+   149                              <1> ;but it cannot be omitted.
+   150                              <1> 
+   151                              <1> ;==============================================
+   152                              <1> ;  showymmregisters 225
+   153                              <1> ;==============================================
+   154                              <1> ;The statement above will show the contents of all 16 AVE registers.  The parameter 225 is arbitrary and may be replaced by any integer,
+   155                              <1> ;but it cannot be omitted.
+   156                              <1> 
+   157                              <1> 
+   158                              <1> 
+   159                              <1> 
+   160                              <1> ;To the 240 class:
+   161                              <1> ;This debug set of subprograms was derived from the original work of Dr Paul Carter.  He made a similar set of subprograms that could 
+   162                              <1> ;be easily included in any assembly program.  All of his work was written in X86-32m and unfortunately, he seems to have lost interest 
+   163                              <1> ;in updating his work.  You can and probably should visit his website: http://www.drpaulcarter.com/pcasm/.  There you may download the
+   164                              <1> ;original include files which he called "asm_io.inc" and "asm_io.asm".  They are inside a zip file.  He also has a free ebook there on 
+   165                              <1> ;X86-32 programming.  Yes, all the examples are 32-bit one, but the text description of instructions is still very helpful.  For 
+   166                              <1> ;instance, in his ebook you can read a concise description of many of the FPU87 instructions, that is, those instructions that act on
+   167                              <1> ;the st registers.  Yes, I am aware that others have tried to update his work to become relevant to 64-bit programming, but I still like
+   168                              <1> ;the original ebook.
+   169                              <1> 
+   170                              <1> ;Thus, Dr Carter's work was the foundation for the debug.inc and debug.asm files you are now reading.  For the curious, you may wonder 
+   171                              <1> ;what happens when an assembly program has to call a C++ function that requires more that 6 incoming parameters.  There is an example of
+   172                              <1> ;passing 9 parameters to printf in the "showregisterssubprogram", which is inside the file debug.asm.  Notice the registerformat1 requires 8 numeric
+   173                              <1> ;values be passed to printf in addition to passing the string registerformat1 in rdi.  
+   174                              <1> 
+   175                              <1> 
+   176                              <1> 
+   177                                  
+   178                                  extern printf						    ;External C++ function for writing to standard output device
+   179                                  
+   180                                  extern scanf						    ;External C++ function for obtaining user input
+   181                                  
+   182                                  global ThePowersOfe	 				    ;This makes ThePowersOfe callable by functions outside of this file.
+   183                                  
+   184                                  segment .data						    ;Place initialized data here
+   185                                  
+   186                                  ;===== Message Declarations =======================================================================================================
+   187                                  
+   188 00000000 0A57656C636F6D6520-     welcome db 10, "Welcome to harmonic series by Art Grichine!", 10,
+   189 00000009 746F206861726D6F6E-
+   190 00000012 696320736572696573-
+   191 0000001B 206279204172742047-
+   192 00000024 72696368696E65210A 
+   193 0000002D 0A5468652070726F67-     	db 10, "The program will compute a partial sum of the harmonic series.", 10,
+   194 00000036 72616D2077696C6C20-
+   195 0000003F 636F6D707574652061-
+   196 00000048 207061727469616C20-
+   197 00000051 73756D206F66207468-
+   198 0000005A 65206861726D6F6E69-
+   199 00000063 63207365726965732E-
+   200 0000006C 0A                 
+   201 0000006D 0A5468657365207265-             db 10, "These results were obtained on a MacBook Pro (late 2013) running Haswell i7 at 2.6GHz.", 10, 0
+   202 00000076 73756C747320776572-
+   203 0000007F 65206F627461696E65-
+   204 00000088 64206F6E2061204D61-
+   205 00000091 63426F6F6B2050726F-
+   206 0000009A 20286C617465203230-
+   207 000000A3 3133292072756E6E69-
+   208 000000AC 6E672048617377656C-
+   209 000000B5 6C2069372061742032-
+   210 000000BE 2E3647487A2E0A00   
+   211                                  
+   212 000000C6 0A506C656173652065-     enter_number_x db 10, "Please enter a positive real number X: ", 0 
+   213 000000CF 6E746572206120706F-
+   214 000000D8 736974697665207265-
+   215 000000E1 616C206E756D626572-
+   216 000000EA 20583A2000         
+   217                                  
+   218 000000EF 54686520736D616C6C-     sum_being_computed db "The smallest harmonic sum ≥ X is being computed.", 10, 0
+   219 000000F8 657374206861726D6F-
+   220 00000101 6E69632073756D20E2-
+   221 0000010A 89A520582069732062-
+   222 00000113 65696E6720636F6D70-
+   223 0000011C 757465642E0A00     
+   224                                  
+   225 00000123 506C65617365206265-     be_patient db "Please be patient . . . . The sum is now computed.", 10, 0
+   226 0000012C 2070617469656E7420-
+   227 00000135 2E202E202E202E2054-
+   228 0000013E 68652073756D206973-
+   229 00000147 206E6F7720636F6D70-
+   230 00000150 757465642E0A00     
+   231                                  
+   232 00000157 546865206861726D6F-     results db "The harmonic sum is %1.15lf, which required the addition of %ld terms.", 10, 0
+   233 00000160 6E69632073756D2069-
+   234 00000169 732025312E31356C66-
+   235 00000172 2C2077686963682072-
+   236 0000017B 657175697265642074-
+   237 00000184 686520616464697469-
+   238 0000018D 6F6E206F6620256C64-
+   239 00000196 207465726D732E0A00 
+   240                                  
+   241 0000019F 54686520636C6F636B-     system_clock_pre db "The clock time before the calculations began was %ld.", 10, 0
+   242 000001A8 2074696D6520626566-
+   243 000001B1 6F7265207468652063-
+   244 000001BA 616C63756C6174696F-
+   245 000001C3 6E7320626567616E20-
+   246 000001CC 77617320256C642E0A-
+   247 000001D5 00                 
+   248                                  
+   249 000001D6 54686520636C6F636B-     system_clock_post db "The clock time after completion of calculations was %ld.", 10, 0
+   250 000001DF 2074696D6520616674-
+   251 000001E8 657220636F6D706C65-
+   252 000001F1 74696F6E206F662063-
+   253 000001FA 616C63756C6174696F-
+   254 00000203 6E732077617320256C-
+   255 0000020C 642E0A00           
+   256                                  
+   257 00000210 546865206861726D6F-     elapsed_time db "The harmonic computation required %7ld clock cycles (tics) which is %1.8lf seconds.", 10, 0
+   258 00000219 6E696320636F6D7075-
+   259 00000222 746174696F6E207265-
+   260 0000022B 717569726564202537-
+   261 00000234 6C6420636C6F636B20-
+   262 0000023D 6379636C6573202874-
+   263 00000246 696373292077686963-
+   264 0000024F 682069732025312E38-
+   265 00000258 6C66207365636F6E64-
+   266 00000261 732E0A00           
+   267                                  
+   268 00000265 546869732061737365-     return_to_caller db "This assembly program will return to the caller.", 10, 0
+   269 0000026E 6D626C792070726F67-
+   270 00000277 72616D2077696C6C20-
+   271 00000280 72657475726E20746F-
+   272 00000289 207468652063616C6C-
+   273 00000292 65722E0A00         
+   274                                  
+   275 00000297 257300                  stringformat db "%s", 0						;general string format
+   276                                  
+   277 0000029A 256C6600                formatOneFloat db "%lf", 0					;this format will absorb Taylor Series input of float type 64-bit
+   278                                  
+   279                                  segment .bss							;Place un-initialized data here.
+   280                                  
+   281                                          ;This segment is empty
+   282                                  
+   283                                  segment .text							;Place executable instructions in this segment.
+   284                                  
+   285                                  ThePowersOfe:							;Entry point.  Execution begins here.
+   286                                  
+   287                                  ;=========== Back up all the integer registers used in this program ===============================================================
+   288                                  
+   289 00000000 55                      push rbp 							;Backup the stack base pointer
+   290 00000001 57                      push rdi 							;Backup the destination index
+   291 00000002 56                      push rsi 							;Backup the source index
+   292 00000003 52                      push rdx							;Backup the register
+   293 00000004 51                      push rcx							;Backup the register
+   294 00000005 4150                    push r8								;Backup the register
+   295 00000007 4151                    push r9								;Backup the register
+   296 00000009 4152                    push r10							;Backup the register
+   297 0000000B 4153                    push r11							;Backup the register
+   298 0000000D 4154                    push r12							;Backup the register
+   299 0000000F 4155                    push r13							;Backup the register
+   300 00000011 4156                    push r14							;Backup the register
+   301 00000013 4157                    push r15							;Backup the register	
+   302                                  
+   303                                  ;============  Preliminary ========================================================================================================
+   304                                  
+   305 00000015 C5FC77                  vzeroall							;zeros out all SSE registers
+   306                                  
+   307                                  ;=========== Initialize AVX/SSE register ==========================================================================================
+   308                                  								;for our calculations we must set 4 SSE registry's to 1.0 to 
+   309                                  								;accomidate for our algorithm: count, nth term, accum
+   310 00000018 48B8000000000000F0-     mov  rax, 0x3ff0000000000000 					;copy HEX 1.0 value onto rax
+   311 00000021 3F                 
+   312 00000022 50                      push rax							;push rax value onto the stack for broadcast operation
+   313 00000023 C4627D193424            vbroadcastsd ymm14, [rsp]					;makes ymm10 all 1.0, this will be our count
+   314 00000029 58                      pop  rax							;push operand must be followed by a pop operation when complete
+   315                                  
+   316                                  ;==== 4-way parallel computation ====				;incrimentor for 4-way parallel computation must be == 4.0
+   317 0000002A 48B800000000000010-     mov rax, 0x4010000000000000					;4.0
+   318 00000033 40                 
+   319 00000034 50                      push rax							;place 4.0 on stack
+   320 00000035 C4627D192C24            vbroadcastsd ymm13, [rsp]					;make ymm13 4.0 to use as incrimentor for 4-way parallel computing
+   321 0000003B 58                      pop rax								;restore stack from previous process
+   322                                  
+   323                                  								;for 4-way parallel processing we need to have a register containing
+   324                                  ;==== set 1-2-3-4 in ymm12 ====					;  a register that contains incrimentors 4-3-2-1
+   325 0000003C 48B800000000000010-     mov rax, 0x4010000000000000					;4.0				
+   326 00000045 40                 
+   327 00000046 50                      push rax							;push 4.0 onto stack		 =================================
+   328 00000047 48B800000000000008-     mov rax, 0x4008000000000000					;3.0			ymm12--> =  4.0	 =  3.0	 =  2.0	 =  1.0	 =
+   329 00000050 40                 
+   330 00000051 50                      push rax							;push 3.0 onto stack		 =================================
+   331 00000052 48B800000000000000-     mov rax, 0x4000000000000000					;2.0			
+   332 0000005B 40                 
+   333 0000005C 50                      push rax							;push 2.0 onto stack	
+   334 0000005D 48B8000000000000F0-     mov rax, 0x3ff0000000000000					;1.0			
+   335 00000066 3F                 
+   336 00000067 50                      push rax							;push 1.0 onto stack	
+   337 00000068 C57D102424              vmovupd ymm12, [rsp]
+   338 0000006D 4883C420                add rsp, 32							;return stack pointer to start before we set 1-2-3-4(same as pop x 4)
+   339                                  								;	=================================
+   340                                  								;ymm15->=   0	=   0	=   0	=  user	= <-- User input
+   341                                  								;	=================================
+   342                                  								;ymm14->=  1.0	=  1.0	=  1.0	=  1.0	= <-- Reciprocal aid
+   343                                  								;	=================================
+   344                                  								;ymm13->=  4.0	=  4.0	=  4.0	=  4.0	= <-- Incrimentor
+   345                                  								;	=================================
+   346                                  								;ymm12->=  4.0	=  3.0	=  2.0	=  1.0	= <-- # before reciprocal
+   347                                  								;	=================================
+   348                                  ;=========== Show the initial message =============================================================================================
+   349                                  
+   350 00000071 4831C0                  xor  rax, rax							;tell printf not to expect any doubles in upcoming call
+   351 00000074 48BF-                   mov  rdi, stringformat 						;simple format indicating string ' "%s",0 '
+   352 00000076 [9702000000000000] 
+   353 0000007E 48BE-                   mov  rsi, welcome 						;display: Welcome Message, Name, Machine, Purpose of Assignment 
+   354 00000080 [0000000000000000] 
+   355 00000088 E8(00000000)            call printf							;display welcome message from the driver program (.cpp)
+   356                                  
+   357                                  ;============ Input for X values ==================================================================================================
+   358                                  
+   359                                  ;==== Display message for x ====
+   360 0000008D 4831C0                  xor  rax, rax							;satisfies printf function, expects no doubles in upcoming printf
+   361 00000090 48BF-                   mov  rdi, stringformat						;"%s"
+   362 00000092 [9702000000000000] 
+   363 0000009A 48BE-                   mov  rsi, enter_number_x 					;asks user to enter four FPU numbers seperated by a space
+   364 0000009C [C600000000000000] 
+   365 000000A4 E8(00000000)            call printf							;display user prompt for 'x' values
+   366                                  
+   367                                  ;==== Grab data for x ====
+   368 000000A9 4831C0                  xor  rax, rax							;clear rax registry
+   369 000000AC 6A00                    push qword 0							;allocate storage for an input number on int stack
+   370 000000AE 48BF-                   mov  rdi, formatOneFloat 					;formats input of scanf to recieve a float number "%lf"
+   371 000000B0 [9A02000000000000] 
+   372 000000B8 4889E6                  mov  rsi, rsp							;assign register to copy stack pointer location to absorb x1
+   373 000000BB E8(00000000)            call scanf							;scan all four user inputs for 'x' and place in appropriate space
+   374 000000C0 C57D103C24              vmovupd ymm15, [rsp] 						;place user x values onto ymm11 for upcoming manipulation
+   375 000000C5 58                      pop rax								;deallocate memory allocation for input
+   376                                  
+   377                                  ;============ Read system clock pre-calculations===================================================================================
+   378                                  								;System clock-speed found in 1/2 of rdx and 1/2 of rax, to get the
+   379                                  								;accurate clock-speed (in tics) we must read the clock and then 
+   380                                  								;combine the two registers (rdx:rax) into one for the full reading. 
+   381                                  ;==== get system clock ====
+   382 000000C6 0FA2                    cpuid								;stop 'look ahead' for cpu; lets us get a more accurate clock speed
+   383 000000C8 0F31                    rdtsc								;read cpu clock, values stored in rdx:rax
+   384 000000CA 41BD00000000            mov qword r13, 0						;zero out r13 register for upcoming calculations, will hold rax
+   385 000000D0 41BC00000000            mov qword r12, 0						;zero out r12 register for upcoming calculations, will hold rdx
+   386 000000D6 4989C5                  mov 	  r13, rax						;place rdx value onto r13 in preparation to combine rax/rdx
+   387 000000D9 4989D4                  mov 	  r12, rdx						;place rdx value onto r12 in preparation to combine rax/rdx
+   388 000000DC 49C1E420                shl	  r12, 32						;shift r12 32 bits
+   389 000000E0 4D09EC                  or	  r12, r13						;combine r12 and r13, r12 has entire system clock count now 
+   390                                  
+   391                                  ;============ Calculate Harmonic Sum ==============================================================================================
+   392                                  
+   393                                  ;==== computation starting message ====
+   394 000000E3 4831C0                  xor  rax, rax							;tell printf not to expect any doubles in upcoming call
+   395 000000E6 48BF-                   mov  rdi, stringformat 						;simple format indicating string ' "%s",0 '
+   396 000000E8 [9702000000000000] 
+   397 000000F0 48BE-                   mov  rsi, sum_being_computed					;display: "The smallest harmonic sum ≥ X is being computed.", 10, 0
+   398 000000F2 [EF00000000000000] 
+   399 000000FA E8(00000000)            call printf							;display message from the driver program (.cpp)
+   400                                  showymmregisters 20
+   401 000000FF 6A14                <1>  push qword %1
+   402 00000101 E8(00000000)        <1>  call showymmsubprogram
+   403                                  ;==== 4 way parallel computation ====
+   404                                  iterate_again:							;iterate through until xmm10 ≥ xmm15 (user input)
+   405                                  
+   406 00000106 C4417D10DE              vmovupd ymm11, ymm14						;place 1.0 on ymm11 to divide a divisor against == reciprocal
+   407 0000010B C441255EDC              vdivpd ymm11, ymm12						;get reciprocal value of the numbers in preparation for summation
+   408 00000110 C4412D58D3              vaddpd ymm10, ymm11						;add reciprocal value to sum
+   409                                  
+   410 00000115 66450F2ED7              ucomisd xmm10, xmm15						;compare count (xmm10) with our users Taylor Series number (xmm15)
+   411 0000011A C4413558CD              vaddpd  ymm9, ymm13						;increment count by 4
+   412 0000011F C4411D58E5              vaddpd  ymm12, ymm13						;incriment next round of numbers before getting reciprocal by 4
+   413 00000124 72E0                    jb iterate_again						;if xmm10 < xmm15 jump to 'iterate_again:' jb is 'jumb below', if
+   414                                  
+   415 00000126 C4411D5CE6              vsubpd ymm12, ymm14						;subtrack 1 from count, after computation count is too high by 1
+   416                                  
+   417                                  ;post: ymm12 must hold count					SSE/AVX post calculation:
+   418                                  ;post: xmm10 must hold sum					;	=================================
+   419                                  								;ymm15->=   0	=   0	=   0	=  user	= <-- User input
+   420                                  								;	=================================
+   421                                  								;ymm14->=  1.0	=  1.0	=  1.0	=  1.0	= <-- Reciprocal aid
+   422                                  								;	=================================
+   423                                  								;ymm13->=  4.0	=  4.0	=  4.0	=  4.0	= <-- Incrimentor
+   424                                  								;	=================================
+   425                                  								;ymm12->=  4.0	=  3.0	=  2.0	=  1.0	= <-- # before reciprocal
+   426                                  								;	=================================
+   427                                  								;ymm11->= 1/4.0 = 1/3.0 = 1/2.0 = 1/1.0 = <-- Reciprocal values
+   428                                  								;	=================================
+   429                                  								;ymm10->=  Sum	=  Sum	=  Sum	=  Sum	= <-- Accumulator
+   430                                  								;	=================================
+   431                                  								;ymm09->=  4.0	=  4.0	=  4.0	=  4.0	= <-- Counter
+   432                                  								;	=================================
+   433                                  
+   434                                  
+   435                                  ;============ Read system clock post-calculations==================================================================================
+   436                                  
+   437                                  ;==== get system clock ====
+   438 0000012B 0FA2                    cpuid								;stop 'look ahead' for cpu
+   439 0000012D 0F31                    rdtsc								;read cpu clock, values stored in rdx:rax
+   440 0000012F 41BF00000000            mov qword r15, 0						;zero out r15 register for upcoming calculations, will hold rax
+   441 00000135 41BE00000000            mov qword r14, 0						;zero out r14 register for upcoming calculations, will hold rdx
+   442 0000013B 4989C7                  mov 	  r15, rax						;place rax value onto r15 in preparation to combine rax/rdx
+   443 0000013E 4989D6                  mov 	  r14, rdx						;place rdx value onto r14 in preparation to combine rax/rdx
+   444 00000141 49C1E620                shl	  r14, 32						;shift r14 32 bits
+   445 00000145 4D09FE                  or	  r14, r15						;combine r14 and r15, r14 has entire system clock count now
+   446                                  				
+   447                                  ;==== output system clock pre-calc ====
+   448 00000148 4C89E6                  mov rsi, r12							;place timer value from rax into rsi in preperation for output
+   449 0000014B 4831C0                  xor rax, rax							;zero-out rax register
+   450 0000014E 48BF-                   mov rdi, system_clock_pre					;assign output format to rdi for printf output
+   451 00000150 [9F01000000000000] 
+   452 00000158 E8(00000000)            call printf							;print system clock tics pre-calculation
+   453                                  							
+   454                                  ;==== output system clock post-calc ====
+   455 0000015D 4C89F6                  mov rsi, r14							;place timer value from rax into rsi in preperation for output
+   456 00000160 4831C0                  xor rax, rax							;zero-out rax register
+   457 00000163 48BF-                   mov rdi, system_clock_post					;assign output format to rdi for printf output
+   458 00000165 [D601000000000000] 
+   459 0000016D E8(00000000)            call printf							;print system clock tics post-calculation
+   460                                  
+   461                                  ;========== Elapsed time ==========================================================================================================
+   462                                  								;our values of clockspeed pre-calculations is in r12, clockspeed 
+   463                                  								;post-calculations is in r14
+   464                                  ;==== calculate elapsed time (tics) ====
+   465 00000172 4D29E6                  sub r14, r12							;subtract the clockspeed pre-calculation from post-calc clockspeed
+   466                                  								;this gives us our elapsed time
+   467                                  								
+   468                                  								;bc we are doing floating point calculations it is easier to place
+   469                                  								;values onto the SSE registry and do the calculations there.
+   470                                  
+   471                                  ;==== calculate elapsed time (ns) ====				;our ns conversion formula is (clockspeed (in tics) * 10) / 26 = ns
+   472 00000175 41BB0A000000            mov       r11, 10						;need to increase numerator by factor of 10, set up upcoming calc
+   473 0000017B F2490F2AE3              cvtsi2sd xmm4, r11						;convert 10 into floating point and place onto xmm4
+   474 00000180 F2490F2AEE              cvtsi2sd xmm5, r14						;convert our clockspeed (in tics) and place onto xmm5
+   475 00000185 C5DD59E5                vmulpd   ymm4, ymm5						;multiply clockspeed (in tics) by factor of 10
+   476 00000189 41BB1A000000            mov       r11, 26						;int 26 onto r11 so that we may divide our value by(machine spd*10)
+   477 0000018F F2490F2AEB              cvtsi2sd xmm5, r11						;convert 26 into floating point and place onto xmm5
+   478 00000194 C5DD5EE5                vdivpd   ymm4, ymm5						;divide (tics * 10) by known cpu speed (2.6Ghz * 10) to get real ns	
+   479 00000198 C5FD10C4                vmovupd  ymm0, ymm4						;output for nanoseconds ready on ymm0
+   480                                  
+   481                                  ;==== calculate elapsed time (sec) ====				;ns --> sec = ns/1billion
+   482 0000019C 41BB00CA9A3B            mov r11, 1000000000						;place 1billion onto r11 to prepare for floatpnt conversion on SSE
+   483 000001A2 F2490F2AEB              cvtsi2sd xmm5, r11						;converst 1billion into float number and place on xmm5
+   484 000001A7 C5DD5EE5                vdivpd ymm4, ymm5						;divide ns/1billion = elapsed time in seconds
+   485 000001AB C5FD10C4                vmovupd ymm0, ymm4						;place elapsed time in seconds onto ymm1 for output
+   486                                  
+   487                                  ;==== output elapsed time ====					;elapsed time in tics sits on r14, ns on ymm0, sec on ymm1
+   488 000001AF 4C89F6                  mov rsi, r14							;place elapsed time in tics on to rsi for output
+   489 000001B2 B801000000              mov rax, 1							;tell printf to find the first two numbers(ns/sec)on SSE(xmm0,xmm1)
+   490 000001B7 48BF-                   mov rdi, elapsed_time						;format output for elapsed time in tics, ns, and seconds
+   491 000001B9 [1002000000000000] 
+   492 000001C1 E8(00000000)            call printf							;output elapsed time in tics, ns, and seconds
+   493                                  
+   494                                  
+   495                                  ;========== Output Results ========================================================================================================
+   496                                  
+   497                                  ;==== print ====
+   498 000001C6 F2490F2DF1              cvtsd2si rsi, xmm9
+   499 000001CB C4C17D10C2              vmovupd ymm0, ymm10
+   500 000001D0 B801000000              mov  rax, 1							;tell printf to expect 1 FPU value on the upcoming print
+   501 000001D5 48BF-                   mov  rdi, results	 					;prepare format for our values on printf
+   502 000001D7 [5701000000000000] 
+   503 000001DF E8(00000000)            call printf							;print x and e^x values to the terminal
+   504                                  
+   505                                  ;=========== Now cleanup and return to the caller =================================================================================
+   506                                  
+   507 000001E4 415F                    pop r15								;Restore original value
+   508 000001E6 415E                    pop r14								;Restore original value
+   509 000001E8 415D                    pop r13								;Restore original value
+   510 000001EA 415C                    pop r12								;Restore original value
+   511 000001EC 415B                    pop r11								;Restore original value
+   512 000001EE 415A                    pop r10								;Restore original value
+   513 000001F0 4159                    pop r9								;Restore original value
+   514 000001F2 4158                    pop r8								;Restore original value
+   515 000001F4 59                      pop rcx								;Restore original value
+   516 000001F5 5A                      pop rdx								;Restore original value
+   517 000001F6 5E                      pop rsi								;Restore original value
+   518 000001F7 5F                      pop rdi								;Restore original value
+   519 000001F8 5D                      pop rbp								;Restore original value
+   520                                  
+   521 000001F9 B801000000              mov qword rax, 1						;Return value of 1 to the driver
+   522                                  
+   523 000001FE C3                      ret								;Return to driver program (.cpp)
+   524                                                                                                 
+   525                                  ;========== End of program ThePowersOfe.asm========================================================================================
